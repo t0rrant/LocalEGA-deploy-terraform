@@ -2,20 +2,45 @@
    Main file for the Local EGA images
    ================================== */
 
-variable username    {}
-variable password    {}
-variable tenant_id   {}
-variable tenant_name {}
-variable auth_url    {}
-variable region      {}
-variable domain_name {}
+variable "username" {
+}
 
-variable boot_image  {}
-variable router_id   {}
-variable flavor      {}
-variable flavor_compute {}
-variable key         {}
-variable dns_servers { type = "list" }
+variable "password" {
+}
+
+variable "tenant_id" {
+}
+
+variable "tenant_name" {
+}
+
+variable "auth_url" {
+}
+
+variable "region" {
+}
+
+variable "domain_name" {
+}
+
+variable "boot_image" {
+}
+
+variable "router_id" {
+}
+
+variable "flavor" {
+}
+
+variable "flavor_compute" {
+}
+
+variable "key" {
+}
+
+variable "dns_servers" {
+  type = list(string)
+}
 
 terraform {
   backend "local" {
@@ -25,13 +50,13 @@ terraform {
 
 # Configure the OpenStack Provider
 provider "openstack" {
-  user_name   = "${var.username}"
-  password    = "${var.password}"
-  tenant_id   = "${var.tenant_id}"
-  tenant_name = "${var.tenant_name}"
-  auth_url    = "${var.auth_url}"
-  region      = "${var.region}"
-  domain_name = "${var.domain_name}"
+  user_name   = var.username
+  password    = var.password
+  tenant_id   = var.tenant_id
+  tenant_name = var.tenant_name
+  auth_url    = var.auth_url
+  region      = var.region
+  domain_name = var.domain_name
 }
 
 # ========= Network =========
@@ -42,70 +67,70 @@ resource "openstack_networking_network_v2" "boot_net" {
 }
 
 resource "openstack_networking_subnet_v2" "boot_subnet" {
-  network_id  = "${openstack_networking_network_v2.boot_net.id}"
-  name        = "boot-ega-subnet"
-  cidr        = "192.168.1.0/24"
-  enable_dhcp = true
-  ip_version  = 4
-  dns_nameservers = "${var.dns_servers}"
+  network_id      = openstack_networking_network_v2.boot_net.id
+  name            = "boot-ega-subnet"
+  cidr            = "192.168.1.0/24"
+  enable_dhcp     = true
+  ip_version      = 4
+  dns_nameservers = var.dns_servers
 }
 
 resource "openstack_networking_router_interface_v2" "boot_router_interface" {
-  router_id = "${var.router_id}"
-  subnet_id = "${openstack_networking_subnet_v2.boot_subnet.id}"
+  router_id = var.router_id
+  subnet_id = openstack_networking_subnet_v2.boot_subnet.id
 }
-
 
 # ========= Instances =========
 
 resource "openstack_compute_instance_v2" "common" {
   name            = "ega-common"
-  flavor_name     = "${var.flavor}"
-  image_name      = "${var.boot_image}"
-  key_pair        = "${var.key}"
+  flavor_name     = var.flavor
+  image_name      = var.boot_image
+  key_pair        = var.key
   security_groups = ["default"]
   network {
-    uuid          = "${openstack_networking_network_v2.boot_net.id}"
-    fixed_ip_v4   = "192.168.1.200"
+    uuid        = openstack_networking_network_v2.boot_net.id
+    fixed_ip_v4 = "192.168.1.200"
   }
-  user_data       = "${file("${path.module}/common.sh")}"
+  user_data = file("${path.module}/common.sh")
 }
 
 resource "openstack_compute_instance_v2" "db" {
   name            = "ega-db"
-  flavor_name     = "${var.flavor}"
-  image_name      = "${var.boot_image}"
-  key_pair        = "${var.key}"
+  flavor_name     = var.flavor
+  image_name      = var.boot_image
+  key_pair        = var.key
   security_groups = ["default"]
   network {
-    uuid          = "${openstack_networking_network_v2.boot_net.id}"
-    fixed_ip_v4   = "192.168.1.201"
+    uuid        = openstack_networking_network_v2.boot_net.id
+    fixed_ip_v4 = "192.168.1.201"
   }
-  user_data       = "${file("${path.module}/db.sh")}"
+  user_data = file("${path.module}/db.sh")
 }
 
 resource "openstack_compute_instance_v2" "mq" {
   name            = "ega-mq"
-  flavor_name     = "${var.flavor}"
-  image_name      = "${var.boot_image}"
-  key_pair        = "${var.key}"
+  flavor_name     = var.flavor
+  image_name      = var.boot_image
+  key_pair        = var.key
   security_groups = ["default"]
   network {
-    uuid          = "${openstack_networking_network_v2.boot_net.id}"
-    fixed_ip_v4   = "192.168.1.202"
+    uuid        = openstack_networking_network_v2.boot_net.id
+    fixed_ip_v4 = "192.168.1.202"
   }
-  user_data       = "${file("${path.module}/mq.sh")}"
+  user_data = file("${path.module}/mq.sh")
 }
 
 resource "openstack_compute_instance_v2" "monitor" {
   name            = "ega-monitor"
-  flavor_name     = "${var.flavor_compute}"
-  image_name      = "${var.boot_image}"
-  key_pair        = "${var.key}"
+  flavor_name     = var.flavor_compute
+  image_name      = var.boot_image
+  key_pair        = var.key
   security_groups = ["default"]
   network {
-    uuid          = "${openstack_networking_network_v2.boot_net.id}"
-    fixed_ip_v4   = "192.168.1.203"
+    uuid        = openstack_networking_network_v2.boot_net.id
+    fixed_ip_v4 = "192.168.1.203"
   }
-  user_data       = "${file("${path.module}/elk.sh")}"
+  user_data = file("${path.module}/elk.sh")
 }
+
